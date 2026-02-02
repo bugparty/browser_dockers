@@ -2,6 +2,15 @@ FROM ubuntu:24.04
 ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 
+# OCI Image Labels
+LABEL org.opencontainers.image.title="Chrome Browser Docker"
+LABEL org.opencontainers.image.description="Google Chrome browser in Docker with VNC support, remote debugging (CDP), and WebGL rendering via SwiftShader. Supports both AMD64 (Chrome) and ARM64 (Chromium) architectures."
+LABEL org.opencontainers.image.vendor="browserdocker"
+LABEL org.opencontainers.image.source="https://github.com/yourusername/browserdocker"
+LABEL org.opencontainers.image.documentation="https://github.com/yourusername/browserdocker/blob/main/README.md"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL maintainer="browserdocker"
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb x11vnc fluxbox \
     libgtk-3-0 libwebkit2gtk-4.1-0 \
