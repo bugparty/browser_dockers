@@ -19,8 +19,8 @@ sleep 2
 DISPLAY=:99 fluxbox &
 FLUXBOX_PID=$!
 
-# Start x11vnc in the background
-DISPLAY=:99 x11vnc -display :99 -forever -nopw -listen 0.0.0.0 -rfbport 5900 &
+# Start x11vnc in the background (listen only on localhost for use with network_mode=host)
+DISPLAY=:99 x11vnc -display :99 -forever -nopw -listen 127.0.0.1 -rfbport 5900 &
 X11VNC_PID=$!
 
 # Wait a bit for the display to be fully ready
@@ -42,12 +42,6 @@ for i in {1..30}; do
   fi
   sleep 1
 done
-
-# Use socat to forward port 9222 to 0.0.0.0
-socat TCP-LISTEN:9223,fork,reuseaddr,bind=0.0.0.0 TCP:127.0.0.1:9222 &
-SOCAT_PID=$!
-
-echo "Port forwarding: 0.0.0.0:9223 -> 127.0.0.1:9222"
 
 # Wait for the application process
 wait $APP_PID
