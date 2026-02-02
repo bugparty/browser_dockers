@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  mlx:
+    image: browserdocker-brave:latest
+    container_name: mlx-app
+    ports:
+      - "5900:5900"
+      - "9222:9222"
+    volumes:
+      - ./appuser:/home/appuser
+    environment:
+      - DISPLAY=:99
+    restart: unless-stopped
