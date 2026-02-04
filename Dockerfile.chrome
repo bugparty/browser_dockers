@@ -88,6 +88,17 @@ CMD ["chrome", \
      "--disable-setuid-sandbox", \
      "--disable-dev-shm-usage", \
      "--disable-dbus", \
+     "--disable-background-timer-throttling", \
+     "--disable-renderer-backgrounding", \
+     "--disable-backgrounding-occluded-windows", \
+     "--disable-features=TranslateUI,BlinkGenPropertyTrees,VizDisplayCompositor", \
+     "--disable-background-networking", \
+     "--disable-component-update", \
+     "--disable-sync", \
+     "--disable-default-apps", \
+     "--disable-web-security", \
+     "--no-zygote", \
+     "--single-process", \
      "--use-angle=swiftshader", \
      "--use-gl=angle", \
      "--enable-webgl", \
