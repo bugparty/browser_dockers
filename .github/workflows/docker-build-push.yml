@@ -117,19 +117,17 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./${{ matrix.dockerfile }}
-          push: true
-          tags: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.tags || steps.meta-other.outputs.tags }}
           labels: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.labels || steps.meta-other.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: ${{ matrix.platform }}
           build-args: |
             OPENCLAW_VERSION=${{ steps.version.outputs.openclaw_version }}
-          provenance: mode=max
           outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }},push-by-digest=true,name-canonical=true,push=true
       
       - name: Export digest
@@ -161,6 +159,9 @@ jobs:
           - browserdocker-openclaw
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Download digests
         uses: actions/download-artifact@v4
         with:
@@ -226,4 +227,5 @@ jobs:
       
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }}:${{ matrix.image-name == 'browserdocker-openclaw' && steps.meta-openclaw.outputs.version || steps.meta-other.outputs.version }}
+          tag=$(echo '${{ matrix.image-name == 'browserdocker-openclaw' && steps.meta-openclaw.outputs.tags || steps.meta-other.outputs.tags }}' | head -n1)
+          docker buildx imagetools inspect ${tag}
