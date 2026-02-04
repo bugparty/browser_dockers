@@ -32,7 +32,7 @@ WORKDIR /home/${USER}
 ARG HOMEBREW_INSTALL_SHA=90fa3d5881cedc0d60c4a3cc5babdb867ef42e5a
 RUN curl -fsSL "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_SHA}/install.sh" -o /tmp/brew-install.sh \
  && echo "1c9db64f27d7487ecf74fe3543b96beb1f78039cc92745c3e825a9a7ccefec80  /tmp/brew-install.sh" | sha256sum -c - \
- && /bin/bash /tmp/brew-install.sh \
+ && CI=1 NONINTERACTIVE=1 /bin/bash /tmp/brew-install.sh \
  && rm /tmp/brew-install.sh
 
 # Add brew to PATH for non-interactive shells
