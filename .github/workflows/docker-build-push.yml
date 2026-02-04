@@ -8,14 +8,22 @@ on:
     paths:
       - 'Dockerfile.barve'
       - 'Dockerfile.chrome'
+      - 'Dockerfile.openclaw'
       - 'entrypoint.sh'
       - 'entrypoint-chrome.sh'
+      - 'entrypoint-openclaw.sh'
       - '.github/workflows/docker-build-push.yml'
+      - '.openclaw-version'
   pull_request:
     branches:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      openclaw_version:
+        description: 'OpenClaw version to build'
+        required: false
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -34,10 +42,25 @@ jobs:
             image-name: browserdocker-brave
           - dockerfile: Dockerfile.chrome
             image-name: browserdocker-chrome
+          - dockerfile: Dockerfile.openclaw
+            image-name: browserdocker-openclaw
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Get OpenClaw version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.openclaw_version }}" ]; then
+            OPENCLAW_VERSION="${{ github.event.inputs.openclaw_version }}"
+          elif [ -f .openclaw-version ]; then
+            OPENCLAW_VERSION=$(cat .openclaw-version | tr -d '[:space:]')
+          else
+            OPENCLAW_VERSION="unknown"
+          fi
+          echo "openclaw_version=$OPENCLAW_VERSION" >> $GITHUB_OUTPUT
+          echo "OpenClaw version: $OPENCLAW_VERSION"
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -49,8 +72,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract metadata (tags, labels)
-        id: meta
+      - name: Extract metadata (tags, labels) - OpenClaw
+        if: matrix.dockerfile == 'Dockerfile.openclaw'
+        id: meta-openclaw
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ steps.version.outputs.openclaw_version }},enable=${{ steps.version.outputs.openclaw_version != 'unknown' && steps.version.outputs.openclaw_version != 'none' }}
+            type=sha,prefix={{branch}}-
+      
+      - name: Extract metadata (tags, labels) - Other images
+        if: matrix.dockerfile != 'Dockerfile.openclaw'
+        id: meta-other
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }}
@@ -68,8 +103,10 @@ jobs:
           context: .
           file: ./${{ matrix.dockerfile }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.tags || steps.meta-other.outputs.tags }}
+          labels: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.labels || steps.meta-other.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            OPENCLAW_VERSION=${{ steps.version.outputs.openclaw_version }}

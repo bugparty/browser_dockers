@@ -1,31 +1,31 @@
-# 🐳 Browser Docker - Chrome & Brave 浏览器容器化方案
+# 🐳 Browser Docker - Chrome & Brave Browser Containerization Solution
 
-一个完整的浏览器容器化解决方案，支持 Chrome 和 Brave 浏览器在 Docker 中运行，并提供 VNC 可视化和自动化控制能力。
+A complete browser containerization solution that supports running Chrome and Brave browsers in Docker with VNC visualization and automation control capabilities.
 
-## 🌟 特性
+## 🌟 Features
 
-- ✅ **双浏览器支持** - Chrome 和 Brave 两个独立镜像
-- ✅ **多架构支持** - 支持 AMD64 和 ARM64 平台
-- ✅ **VNC 可视化** - 通过 VNC 远程查看浏览器界面
-- ✅ **远程调试** - Chrome DevTools Protocol (CDP) 端口开放
-- ✅ **WebGL 支持** - 使用 SwiftShader 软件渲染 WebGL
-- ✅ **反自动化检测** - 隐藏自动化控制特征
-- ✅ **中文支持** - 内置中文字体和表情符号
-- ✅ **自动化脚本** - 提供 Python 自动化示例
+- ✅ **Dual Browser Support** - Separate images for Chrome and Brave
+- ✅ **Multi-Architecture Support** - Supports AMD64 and ARM64 platforms
+- ✅ **VNC Visualization** - Remote viewing of browser interface via VNC
+- ✅ **Remote Debugging** - Chrome DevTools Protocol (CDP) port exposed
+- ✅ **WebGL Support** - WebGL software rendering using SwiftShader
+- ✅ **Anti-Automation Detection** - Hide automation control features
+- ✅ **Chinese Support** - Built-in Chinese fonts and emoji support
+- ✅ **Automation Scripts** - Python automation examples provided
 
-## 📦 镜像说明
+## 📦 Image Description
 
-### Chrome 镜像 (Dockerfile.chrome)
+### Chrome Image (Dockerfile.chrome)
 
-基于 Ubuntu 24.04 构建，特性：
+Built on Ubuntu 24.04 with features:
 
-- **AMD64**: 安装官方 Google Chrome Stable
-- **ARM64**: 使用 Chromium Browser
-- **WebGL 加速**: 使用 ANGLE + SwiftShader 软件渲染
-- **调试端口**: 9222 (可通过 CDP 协议连接)
-- **VNC 端口**: 5900 (X11 远程桌面)
+- **AMD64**: Official Google Chrome Stable installation
+- **ARM64**: Uses Chromium Browser
+- **WebGL Acceleration**: ANGLE + SwiftShader software rendering
+- **Debug Port**: 9222 (connectable via CDP protocol)
+- **VNC Port**: 5900 (X11 remote desktop)
 
-**启动参数：**
+**Startup Parameters:**
 ```dockerfile
 --user-data-dir=/home/appuser/chrome-data
 --remote-debugging-port=9222
@@ -36,61 +36,61 @@
 --disable-blink-features=AutomationControlled
 ```
 
-### Brave 镜像 (Dockerfile.barve)
+### Brave Image (Dockerfile.barve)
 
-与 Chrome 镜像配置相似，区别：
+Similar configuration to Chrome image, with differences:
 
-- **GPU 禁用**: 使用 `--disable-gpu` 参数
-- **调试地址**: 绑定 `0.0.0.0` 允许外部访问
-- **入口脚本**: 使用独立的 `entrypoint.sh`
+- **GPU Disabled**: Uses `--disable-gpu` parameter
+- **Debug Address**: Binds to `0.0.0.0` to allow external access
+- **Entry Script**: Uses independent `entrypoint.sh`
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 获取镜像
+### 1. Get Images
 
-#### 方式一：直接下载预构建镜像（推荐）
+#### Option 1: Download Pre-built Images (Recommended)
 
-从 GitHub Container Registry 拉取最新版本：
+Pull the latest version from GitHub Container Registry:
 
 ```bash
-# 拉取 Chrome 镜像
+# Pull Chrome image
 docker pull ghcr.io/bugparty/browserdocker-chrome:main
 
-# 拉取 Brave 镜像
+# Pull Brave image
 docker pull ghcr.io/bugparty/browserdocker-brave:main
 ```
 
-#### 方式二：本地构建镜像
+#### Option 2: Build Images Locally
 
-##### 构建 Chrome 镜像
+##### Build Chrome Image
 ```bash
 docker build -f Dockerfile.chrome -t chrome-docker:latest .
 ```
 
-##### 构建 Brave 镜像
+##### Build Brave Image
 ```bash
 docker build -f Dockerfile.barve -t brave-docker:latest .
 ```
 
-##### 多架构构建
+##### Multi-Architecture Build
 ```bash
-# Chrome 镜像
+# Chrome image
 docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.chrome -t chrome-docker:latest .
 
-# Brave 镜像
+# Brave image
 docker buildx build --platform linux/amd64,linux/arm64 -f Dockerfile.barve -t brave-docker:latest .
 ```
 
-### 2. 运行容器
+### 2. Run Containers
 
-#### 使用 Docker Compose（推荐）
+#### Using Docker Compose (Recommended)
 ```bash
 docker-compose up -d
 ```
 
-#### 手动运行 Chrome
+#### Manually Run Chrome
 ```bash
-# 使用预构建镜像
+# Using pre-built image
 docker run -d \
   --name chrome-browser \
   -p 5900:5900 \
@@ -98,7 +98,7 @@ docker run -d \
   -v $(pwd)/appuser:/home/appuser \
   ghcr.io/bugparty/browserdocker-chrome:main
 
-# 或使用本地构建镜像
+# Or using locally built image
 docker run -d \
   --name chrome-browser \
   -p 5900:5900 \
@@ -107,9 +107,9 @@ docker run -d \
   chrome-docker:latest
 ```
 
-#### 手动运行 Brave
+#### Manually Run Brave
 ```bash
-# 使用预构建镜像
+# Using pre-built image
 docker run -d \
   --name brave-browser \
   -p 5901:5900 \
@@ -117,7 +117,7 @@ docker run -d \
   -v $(pwd)/appuser:/home/appuser \
   ghcr.io/bugparty/browserdocker-brave:main
 
-# 或使用本地构建镜像
+# Or using locally built image
 docker run -d \
   --name brave-browser \
   -p 5901:5900 \
@@ -126,146 +126,146 @@ docker run -d \
   brave-docker:latest
 ```
 
-### 3. 连接方式
+### 3. Connection Methods
 
-#### VNC 连接
-使用 VNC 客户端连接到容器的图形界面：
+#### VNC Connection
+Use a VNC client to connect to the container's graphical interface:
 
 ```bash
-# Chrome 容器
+# Chrome container
 vnc://localhost:5900
 
-# Brave 容器
+# Brave container
 vnc://localhost:5901
 ```
 
-推荐的 VNC 客户端：
+Recommended VNC clients:
 - Windows: TightVNC Viewer, RealVNC
 - macOS: Screen Sharing, RealVNC
 - Linux: Remmina, TigerVNC
 
-#### CDP 远程调试
+#### CDP Remote Debugging
 
-Chrome DevTools Protocol 连接：
+Chrome DevTools Protocol connection:
 
 ```bash
-# 获取调试信息
+# Get debugging information
 curl http://localhost:9222/json/version
 
-# 打开调试面板
+# Open debugging panel
 google-chrome --remote-debugging-port=9222
 ```
 
-在 Chrome 浏览器中访问：
+Visit in Chrome browser:
 ```
 chrome://inspect/#devices
 ```
-点击 "Configure" 添加 `localhost:9222`
+Click "Configure" and add `localhost:9222`
 
-## 🔧 配置说明
+## 🔧 Configuration
 
-### 环境变量
+### Environment Variables
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `DISPLAY` | `:99` | X11 显示编号 |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DISPLAY` | `:99` | X11 display number |
 
-### 端口映射
+### Port Mapping
 
-| 容器端口 | 主机端口 | 用途 |
-|----------|----------|------|
-| 5900 | 5900 | VNC 远程桌面 |
+| Container Port | Host Port | Purpose |
+|----------------|-----------|---------|
+| 5900 | 5900 | VNC remote desktop |
 | 9222 | 9222 | Chrome DevTools Protocol |
 
-### 数据持久化
+### Data Persistence
 
-项目使用 volume 挂载 `./appuser` 目录到容器内的 `/home/appuser`，包含：
+The project uses volume mounting of the `./appuser` directory to `/home/appuser` in the container, containing:
 
-- `mlx/` - MLX 应用配置和日志
-- `chrome-data/` - Chrome 用户数据目录
-- `profiles/` - 浏览器配置文件
+- `mlx/` - MLX application configuration and logs
+- `chrome-data/` - Chrome user data directory
+- `profiles/` - Browser profiles
 
-## 🎯 自动化脚本
+## 🎯 Automation Scripts
 
-项目提供了完整的 Python 自动化脚本，位于 `scripts/` 目录。
+The project provides complete Python automation scripts located in the `scripts/` directory.
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
 pip install playwright
 playwright install
 ```
 
-### 运行示例
+### Run Examples
 
-#### 1. 完整功能测试 (chrome_automation.py)
+#### 1. Complete Feature Test (chrome_automation.py)
 
 ```bash
 python scripts/chrome_automation.py
 ```
 
-功能包括：
-- 连接 Docker 容器中的 Chrome
-- 页面导航和截图
-- WebGL 检测
-- 浏览器指纹检测
-- 反爬虫特征测试
+Features include:
+- Connect to Chrome in Docker container
+- Page navigation and screenshots
+- WebGL detection
+- Browser fingerprint detection
+- Anti-bot feature testing
 
-#### 2. WebGL 快速测试 (test_webgl.py)
+#### 2. WebGL Quick Test (test_webgl.py)
 
 ```bash
 python scripts/test_webgl.py
 ```
 
-输出示例：
+Example output:
 ```
-🎨 WebGL 测试结果:
+🎨 WebGL Test Results:
   ✅ Vendor: Google Inc. (Google)
   ✅ Renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader))
   ✅ Version: WebGL 1.0 (OpenGL ES 2.0 Chromium)
   ✅ Max Texture Size: 8192
 ```
 
-#### 3. Selenium 示例 (selenium_example.py)
+#### 3. Selenium Example (selenium_example.py)
 
 ```bash
 python scripts/selenium_example.py
 ```
 
-查看 [scripts/README.md](scripts/README.md) 获取更多详细信息。
+See [scripts/README.md](scripts/README.md) for more detailed information.
 
-## 📊 技术栈
+## 📊 Technology Stack
 
-### 系统组件
+### System Components
 
-- **Ubuntu 24.04** - 基础操作系统
-- **Xvfb** - 虚拟 X11 显示服务器
-- **X11VNC** - VNC 服务器
-- **Fluxbox** - 轻量级窗口管理器
+- **Ubuntu 24.04** - Base operating system
+- **Xvfb** - Virtual X11 display server
+- **X11VNC** - VNC server
+- **Fluxbox** - Lightweight window manager
 
-### 浏览器技术
+### Browser Technology
 
 - **Google Chrome Stable** (AMD64) / **Chromium** (ARM64)
-- **Chrome DevTools Protocol** - 远程调试协议
-- **ANGLE + SwiftShader** - WebGL 软件渲染引擎
+- **Chrome DevTools Protocol** - Remote debugging protocol
+- **ANGLE + SwiftShader** - WebGL software rendering engine
 
-### 字体支持
+### Font Support
 
-- Noto CJK (中日韩统一字体)
-- Noto Color Emoji (彩色表情符号)
-- WenQuanYi (文泉驿中文字体)
-- Roboto, DejaVu, Liberation 等西文字体
+- Noto CJK (Chinese, Japanese, Korean unified fonts)
+- Noto Color Emoji (color emoji)
+- WenQuanYi (Chinese fonts)
+- Roboto, DejaVu, Liberation and other Western fonts
 
-### 自动化工具
+### Automation Tools
 
-- **Playwright** - 现代浏览器自动化框架
-- **Selenium** - 经典自动化测试工具
+- **Playwright** - Modern browser automation framework
+- **Selenium** - Classic automation testing tool
 
-## 🛠️ 高级用法
+## 🛠️ Advanced Usage
 
-### 自定义启动参数
+### Custom Startup Parameters
 
-修改 Dockerfile 中的 CMD 指令来自定义浏览器启动参数：
+Modify the CMD instruction in Dockerfile to customize browser startup parameters:
 
 ```dockerfile
 CMD ["chrome", \
@@ -273,118 +273,118 @@ CMD ["chrome", \
      "--remote-debugging-port=9222", \
      "--window-size=1920,1080", \
      "--start-maximized", \
-     # 添加你的自定义参数
+     # Add your custom parameters here
      ]
 ```
 
-### 添加浏览器扩展
+### Adding Browser Extensions
 
-1. 将扩展文件放入 `./appuser/extensions/` 目录
-2. 在 CMD 中添加参数：
+1. Place extension files in `./appuser/extensions/` directory
+2. Add parameter in CMD:
 ```dockerfile
 --load-extension=/home/appuser/extensions/your-extension
 ```
 
-### 配置代理
+### Configure Proxy
 
-在启动参数中添加：
+Add to startup parameters:
 ```dockerfile
 --proxy-server=http://proxy-server:port
 ```
 
-或通过环境变量：
+Or via environment variables:
 ```yaml
 environment:
   - HTTP_PROXY=http://proxy-server:port
   - HTTPS_PROXY=http://proxy-server:port
 ```
 
-## 📁 目录结构
+## 📁 Directory Structure
 
 ```
 browserdocker/
-├── Dockerfile.chrome          # Chrome 镜像构建文件
-├── Dockerfile.barve           # Brave 镜像构建文件
-├── docker-compose.yml         # Docker Compose 配置
-├── entrypoint-chrome.sh       # Chrome 启动脚本
-├── entrypoint.sh              # Brave 启动脚本
-├── requirements.txt           # Python 依赖
-├── appuser/                   # 用户数据目录（持久化）
-│   └── mlx/                   # MLX 应用数据
-│       ├── configs/           # 配置文件
-│       ├── logs/              # 日志文件
-│       └── profiles/          # 浏览器配置
-└── scripts/                   # 自动化脚本
-    ├── chrome_automation.py   # 完整自动化脚本
-    ├── test_webgl.py          # WebGL 测试
-    ├── selenium_example.py    # Selenium 示例
-    └── README.md              # 脚本使用说明
+├── Dockerfile.chrome          # Chrome image build file
+├── Dockerfile.barve           # Brave image build file
+├── docker-compose.yml         # Docker Compose configuration
+├── entrypoint-chrome.sh       # Chrome startup script
+├── entrypoint.sh              # Brave startup script
+├── requirements.txt           # Python dependencies
+├── appuser/                   # User data directory (persistent)
+│   └── mlx/                   # MLX application data
+│       ├── configs/           # Configuration files
+│       ├── logs/              # Log files
+│       └── profiles/          # Browser profiles
+└── scripts/                   # Automation scripts
+    ├── chrome_automation.py   # Complete automation script
+    ├── test_webgl.py          # WebGL test
+    ├── selenium_example.py    # Selenium example
+    └── README.md              # Script usage instructions
 ```
 
-## 🐛 故障排查
+## 🐛 Troubleshooting
 
-### 容器无法启动
+### Container Won't Start
 
-检查端口占用：
+Check port conflicts:
 ```bash
 netstat -ano | findstr "5900"
 netstat -ano | findstr "9222"
 ```
 
-查看容器日志：
+View container logs:
 ```bash
 docker logs chrome-browser
 ```
 
-### VNC 无法连接
+### VNC Connection Failed
 
-1. 确认容器正在运行：`docker ps`
-2. 检查端口映射：`docker port chrome-browser`
-3. 尝试重启容器：`docker restart chrome-browser`
+1. Confirm container is running: `docker ps`
+2. Check port mapping: `docker port chrome-browser`
+3. Try restarting container: `docker restart chrome-browser`
 
-### WebGL 不工作
+### WebGL Not Working
 
-确认启动参数包含：
+Ensure startup parameters include:
 ```
 --use-angle=swiftshader
 --use-gl=angle
 --enable-webgl
 ```
 
-测试 WebGL：
+Test WebGL:
 ```bash
 python scripts/test_webgl.py
 ```
 
-### CDP 连接失败
+### CDP Connection Failed
 
-检查调试端口是否开放：
+Check if debug port is open:
 ```bash
 curl http://localhost:9222/json/version
 ```
 
-确认防火墙规则允许访问 9222 端口。
+Confirm firewall rules allow access to port 9222.
 
-## 🔒 安全建议
+## 🔒 Security Recommendations
 
-1. **不要在生产环境中使用** `--no-sandbox` 参数
-2. 限制容器网络访问（使用 Docker 网络隔离）
-3. 定期更新基础镜像和浏览器版本
-4. 不要在公网暴露 VNC 和 CDP 端口
-5. 使用 VNC 密码保护（修改 entrypoint 脚本）
+1. **Do not use** `--no-sandbox` parameter in production environments
+2. Limit container network access (use Docker network isolation)
+3. Regularly update base images and browser versions
+4. Do not expose VNC and CDP ports to the public internet
+5. Use VNC password protection (modify entrypoint script)
 
-## 📝 许可证
+## 📝 License
 
-本项目仅供学习和研究使用。
+This project is for learning and research purposes only.
 
-## 🤝 贡献
+## 🤝 Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-## 📞 支持
+## 📞 Support
 
-如有问题，请在 GitHub Issues 中提出。
+For questions, please submit issues on GitHub.
 
 ---
 
-**注意**: Dockerfile.barve 应该是 Dockerfile.brave 的拼写错误，建议重命名文件。
+**Note**: Dockerfile.barve appears to be a typo for Dockerfile.brave, recommend renaming the file.
