@@ -10,7 +10,6 @@ This is an **incredibly simple** OpenClaw Docker containerization solution. Depl
 ./setup_env.sh 
 
 # 2. Start containers
-docker compose pull
 docker compose up -d
 
 # 3. Configure openclaw
