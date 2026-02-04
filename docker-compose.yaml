@@ -30,9 +30,9 @@ services:
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./openclaw/config}/openclaw.json:/home/node/.openclaw/openclaw.json
-      - ${OPENCLAW_CONFIG_DIR:-./openclaw/config}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-./openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_CONFIG_DIR:-./openclaw/config/}/openclaw.json:/home/node/.openclaw/openclaw.json
+      - ${OPENCLAW_CONFIG_DIR:-./openclaw/config/}:/home/node/.openclaw/
+      - ${OPENCLAW_WORKSPACE_DIR:-./openclaw/workspace}:/home/node/.openclaw/workspace/
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
