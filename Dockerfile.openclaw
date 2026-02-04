@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
     libffi-dev liblzma-dev \
     xz-utils unzip \
+    iputils-ping nano \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen \
     && rm -rf /var/lib/apt/lists/*
@@ -59,8 +60,6 @@ RUN npm install -g openclaw@latest
 # Remove sudo privileges (no longer needed)
 USER root
 RUN rm -f /etc/sudoers.d/${USER}
-RUN mkdir -p /home/${USER}/.openclaw && chown -R ${USER}:${USER} /home/${USER}/.openclaw
-WORKDIR /home/${USER}
 
 ENV NODE_ENV=production
 

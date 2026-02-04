@@ -43,10 +43,36 @@ for i in {1..30}; do
   sleep 1
 done
 
-# Start socat to forward CDP port to external interface
-socat TCP-LISTEN:9223,fork,reuseaddr TCP:127.0.0.1:9222 &
-SOCAT_PID=$!
-echo "socat forwarding CDP port 9222 to 9223"
+# Start nginx reverse proxy to forward CDP with Host header rewrite
+cat > /tmp/nginx-cdp.conf << 'EOF'
+daemon off;
+worker_processes 1;
+pid /tmp/nginx.pid;
+error_log /tmp/nginx-error.log;
+events { worker_connections 1024; }
+http {
+    access_log /tmp/nginx-access.log;
+    client_body_temp_path /tmp/nginx-client-body;
+    proxy_temp_path /tmp/nginx-proxy;
+    fastcgi_temp_path /tmp/nginx-fastcgi;
+    uwsgi_temp_path /tmp/nginx-uwsgi;
+    scgi_temp_path /tmp/nginx-scgi;
+    server {
+        listen 9223;
+        location / {
+            proxy_pass http://127.0.0.1:9222;
+            proxy_http_version 1.1;
+            proxy_set_header Host localhost:9222;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_read_timeout 86400;
+        }
+    }
+}
+EOF
+nginx -c /tmp/nginx-cdp.conf &
+NGINX_PID=$!
+echo "nginx reverse proxy forwarding CDP port 9222 to 9223 with Host header rewrite"
 
 # Wait for the application process
 wait $APP_PID
