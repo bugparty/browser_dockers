@@ -60,7 +60,7 @@ RUN npm install -g openclaw@latest
 USER root
 RUN rm -f /etc/sudoers.d/${USER}
 RUN mkdir -p /home/${USER}/.openclaw && chown -R ${USER}:${USER} /home/${USER}/.openclaw
-WORKDIR /app
+WORKDIR /home/${USER}
 
 ENV NODE_ENV=production
 
