@@ -52,10 +52,6 @@ docker compose exec openclaw bash
 - ✅ **Out-of-the-Box** - No manual configuration needed, everything is automated
 - ✅ **Developer-Friendly** - Built-in bash environment for quick container access
 
-```bash
-# Enter container environment for interactions
-docker compose exec openclaw bash
-```
 
 ## 📦 What's Included
 
