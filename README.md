@@ -18,6 +18,34 @@ docker compose exec openclaw openclaw onboard
 docker compose restart openclaw
 ```
 
+## 🔧 Browser Configuration
+
+Add this configuration to your OpenClaw config file (`/home/node/.openclaw/openclaw.json`) to connect to the local browser service:
+You can ask OpenClaw to add this too.
+
+```json
+{
+  "browser": {
+    "enabled": true,
+    "defaultProfile": "local-browser",
+    "remoteCdpTimeoutMs": 2000,
+    "remoteCdpHandshakeTimeoutMs": 4000,
+    "profiles": {
+      "local-browser": {
+        "cdpUrl": "http://browser:9223",
+        "color": "#00AA00"
+      }
+    }
+  }
+}
+```
+
+## enter openclaw cli/tui
+
+```bash
+docker compose exec openclaw bash
+```
+
 ## 🎯 Key Features
 
 - ✅ **One-Click Deployment** - Complex Docker configuration is already prepared for you
