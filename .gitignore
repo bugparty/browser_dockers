@@ -2,3 +2,4 @@ setup.sh
 .cache
 appuser/
 openclaw/
+.env

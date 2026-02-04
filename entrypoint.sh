@@ -29,5 +29,24 @@ sleep 1
 # Export DISPLAY for the application
 export DISPLAY=:99
 
-# Run the application
-exec "$@"
+# Start the application in the background
+"$@" &
+APP_PID=$!
+
+# Wait for Chrome's debugging port to be available
+echo "Waiting for Chrome to start debugging interface..."
+for i in {1..30}; do
+  if curl -s http://127.0.0.1:9222/json/version > /dev/null 2>&1; then
+    echo "Chrome debugging interface is ready"
+    break
+  fi
+  sleep 1
+done
+
+# Start socat to forward CDP port to external interface
+socat TCP-LISTEN:9223,fork,reuseaddr TCP:127.0.0.1:9222 &
+SOCAT_PID=$!
+echo "socat forwarding CDP port 9222 to 9223"
+
+# Wait for the application process
+wait $APP_PID
