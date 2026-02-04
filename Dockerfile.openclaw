@@ -59,7 +59,7 @@ RUN npm install -g openclaw@latest
 # Remove sudo privileges (no longer needed)
 USER root
 RUN rm -f /etc/sudoers.d/${USER}
-RUN chown -R ${USER}:${USER} /home/${USER}/.openclaw
+RUN mkdir -p /home/${USER}/.openclaw && chown -R ${USER}:${USER} /home/${USER}/.openclaw
 WORKDIR /app
 
 ENV NODE_ENV=production
