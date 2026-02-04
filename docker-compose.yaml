@@ -17,7 +17,7 @@ services:
       retries: 5
       start_period: 15s
     restart: unless-stopped
-  openclaw-gateway:
+  openclaw:
     depends_on:
       - browser
     image: ghcr.io/bugparty/browserdocker-openclaw:latest
@@ -39,6 +39,12 @@ services:
     init: true
     stdin_open: true
     tty: true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${OPENCLAW_BRIDGE_PORT:-18790} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     restart: unless-stopped
 
     command:
