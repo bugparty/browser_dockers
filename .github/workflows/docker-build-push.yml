@@ -123,6 +123,7 @@ jobs:
           context: .
           file: ./${{ matrix.dockerfile }}
           labels: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.labels || steps.meta-other.outputs.labels }}
+          tags: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.tags || steps.meta-other.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: ${{ matrix.platform }}
