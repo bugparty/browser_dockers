@@ -1,0 +1,201 @@
+name: Browser Container Stability Test
+
+on:
+  pull_request:
+    paths:
+      - 'Dockerfile.chrome'
+      - 'entrypoint.sh'
+      - 'compose.local.yml'
+      - '.github/workflows/browser-stability-test.yml'
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'Dockerfile.chrome'
+      - 'entrypoint.sh'
+      - 'compose.local.yml'
+      - '.github/workflows/browser-stability-test.yml'
+  workflow_dispatch:
+
+jobs:
+  stability-test:
+    name: Test Browser Container Stability
+    strategy:
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+    
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up environment
+        run: |
+          ./setup_env.sh
+          # Ensure appuser directory exists and has correct permissions
+          mkdir -p appuser
+          sudo chown -R 1000:1000 appuser/ || true
+      
+      - name: Build browser Docker image
+        run: |
+          docker build -f Dockerfile.chrome -t browser-test:local .
+      
+      - name: Start browser container
+        run: |
+          # Create a test compose file
+          cat > docker-compose.test.yml << 'EOF'
+          version: '3.8'
+          
+          services:
+            browser:
+              image: browser-test:local
+              user: "1000:1000"
+              ports:
+                - "127.0.0.1:5901:5900"
+              volumes:
+                - ./appuser:/home/appuser
+              environment:
+                - DISPLAY=:99
+              healthcheck:
+                test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9223/json/version || exit 1"]
+                interval: 10s
+                timeout: 5s
+                retries: 5
+                start_period: 15s
+              restart: unless-stopped
+          EOF
+          
+          # Start the container
+          docker compose -f docker-compose.test.yml up -d browser
+          
+          # Wait for initial startup
+          echo "Waiting for browser container to start..."
+          sleep 20
+      
+      - name: Run 5-minute stability test
+        id: stability_test
+        run: |
+          echo "Starting 5-minute stability test at $(date)"
+          echo "Platform: ${{ matrix.platform }}"
+          
+          # Initialize counters
+          TOTAL_CHECKS=10
+          PASSED_CHECKS=0
+          FAILED_CHECKS=0
+          INITIAL_START_COUNT=""
+          
+          # Perform health checks every 30 seconds for 5 minutes (10 checks total)
+          for i in $(seq 1 $TOTAL_CHECKS); do
+            echo ""
+            echo "=== Check $i/$TOTAL_CHECKS at $(date) ==="
+            
+            # Get container status
+            CONTAINER_STATUS=$(docker compose -f docker-compose.test.yml ps browser --format json 2>/dev/null | jq -r '.State' || echo "unknown")
+            echo "Container state: $CONTAINER_STATUS"
+            
+            # Check if container is running
+            if [ "$CONTAINER_STATUS" != "running" ]; then
+              echo "❌ ERROR: Container is not running! State: $CONTAINER_STATUS"
+              FAILED_CHECKS=$((FAILED_CHECKS + 1))
+            else
+              # Get restart count
+              RESTART_COUNT=$(docker inspect --format='{{.RestartCount}}' $(docker compose -f docker-compose.test.yml ps -q browser) 2>/dev/null || echo "0")
+              
+              # Store initial restart count on first check
+              if [ -z "$INITIAL_START_COUNT" ]; then
+                INITIAL_START_COUNT=$RESTART_COUNT
+                echo "Initial restart count: $INITIAL_START_COUNT"
+              fi
+              
+              echo "Current restart count: $RESTART_COUNT"
+              
+              # Check if container has restarted
+              if [ "$RESTART_COUNT" -gt "$INITIAL_START_COUNT" ]; then
+                echo "❌ ERROR: Container has restarted! Initial: $INITIAL_START_COUNT, Current: $RESTART_COUNT"
+                FAILED_CHECKS=$((FAILED_CHECKS + 1))
+              else
+                # Test health endpoint
+                if docker exec $(docker compose -f docker-compose.test.yml ps -q browser) curl -fsS http://127.0.0.1:9223/json/version > /dev/null 2>&1; then
+                  echo "✅ Health check PASSED - Browser is healthy"
+                  PASSED_CHECKS=$((PASSED_CHECKS + 1))
+                else
+                  echo "❌ Health check FAILED - Browser endpoint not responding"
+                  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                fi
+              fi
+            fi
+            
+            # Don't sleep after the last check
+            if [ $i -lt $TOTAL_CHECKS ]; then
+              echo "Waiting 30 seconds before next check..."
+              sleep 30
+            fi
+          done
+          
+          echo ""
+          echo "========================================="
+          echo "5-minute stability test completed at $(date)"
+          echo "========================================="
+          echo "Total checks: $TOTAL_CHECKS"
+          echo "Passed: $PASSED_CHECKS"
+          echo "Failed: $FAILED_CHECKS"
+          echo "Success rate: $((PASSED_CHECKS * 100 / TOTAL_CHECKS))%"
+          
+          # Set output for summary
+          echo "passed_checks=$PASSED_CHECKS" >> $GITHUB_OUTPUT
+          echo "failed_checks=$FAILED_CHECKS" >> $GITHUB_OUTPUT
+          echo "total_checks=$TOTAL_CHECKS" >> $GITHUB_OUTPUT
+          
+          # Fail if any checks failed
+          if [ $FAILED_CHECKS -gt 0 ]; then
+            echo "❌ TEST FAILED: $FAILED_CHECKS out of $TOTAL_CHECKS checks failed"
+            exit 1
+          else
+            echo "✅ TEST PASSED: All checks passed successfully!"
+          fi
+      
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== Browser Container Logs ==="
+          docker compose -f docker-compose.test.yml logs browser
+          echo ""
+          echo "=== Container Status ==="
+          docker compose -f docker-compose.test.yml ps
+      
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose -f docker-compose.test.yml down -v || true
+          rm -f docker-compose.test.yml || true
+      
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## Browser Stability Test Results 🧪" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platform:** ${{ matrix.platform }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.stability_test.outcome }}" == "success" ]; then
+            echo "### ✅ Test Passed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The browser container remained stable for 5 minutes without any restarts." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ❌ Test Failed" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The browser container experienced issues during the 5-minute stability test." >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Results:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Total Checks: ${{ steps.stability_test.outputs.total_checks || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Passed: ${{ steps.stability_test.outputs.passed_checks || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Failed: ${{ steps.stability_test.outputs.failed_checks || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
