@@ -52,12 +52,15 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
         && rm -rf /var/lib/apt/lists/* \
         && ln -sf /usr/bin/google-chrome /usr/bin/chrome; \
     else \
-        apt-get update \
-        && apt-get install -y chromium-browser \
+        wget -qO- https://ftp.debian.org/debian/pool/main/c/chromium/chromium_131.0.6778.204-1~deb12u1_arm64.deb -O /tmp/chromium.deb \
+        && wget -qO- https://ftp.debian.org/debian/pool/main/c/chromium/chromium-common_131.0.6778.204-1~deb12u1_all.deb -O /tmp/chromium-common.deb \
+        && wget -qO- https://ftp.debian.org/debian/pool/main/c/chromium/chromium-sandbox_131.0.6778.204-1~deb12u1_arm64.deb -O /tmp/chromium-sandbox.deb \
+        && apt-get update \
+        && apt-get install -y /tmp/chromium-common.deb /tmp/chromium-sandbox.deb /tmp/chromium.deb \
+        && rm -f /tmp/chromium*.deb \
         && rm -rf /var/lib/apt/lists/* \
-        && ln -sf /usr/bin/chromium-browser /usr/bin/chrome \
-        && ln -sf /usr/bin/chromium-browser /usr/bin/google-chrome \
-        && ln -sf /usr/bin/chromium-browser /usr/bin/chromium; \
+        && ln -sf /usr/bin/chromium /usr/bin/chrome \
+        && ln -sf /usr/bin/chromium /usr/bin/google-chrome; \
     fi
  
  # Create non-root user
