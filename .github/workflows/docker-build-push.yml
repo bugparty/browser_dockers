@@ -100,7 +100,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=${{ steps.version.outputs.openclaw_version }},enable=${{ steps.version.outputs.openclaw_version != 'unknown' && steps.version.outputs.openclaw_version != 'none' }}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}},suffix=-
       
       - name: Extract metadata (tags, labels) - Other images
         if: matrix.dockerfile != 'Dockerfile.openclaw'
@@ -111,7 +111,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}},suffix=-
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and push Docker image
