@@ -127,8 +127,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           build-args: |
             OPENCLAW_VERSION=${{ steps.version.outputs.openclaw_version }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }},push-by-digest=true,name-canonical=true,push=true
-      
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }},name-canonical=true,push=true
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
