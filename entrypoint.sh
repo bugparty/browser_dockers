@@ -1,6 +1,16 @@
 #!/bin/bash
 set -e
 
+# Start DBus session bus
+if command -v dbus-launch >/dev/null; then
+  eval $(dbus-launch --sh-syntax)
+  export DBUS_SESSION_BUS_ADDRESS
+  export DBUS_SESSION_BUS_PID
+  # Point system bus to session bus to silence errors
+  export DBUS_SYSTEM_BUS_ADDRESS="$DBUS_SESSION_BUS_ADDRESS"
+  echo "Started DBus session bus: $DBUS_SESSION_BUS_ADDRESS"
+fi
+
 # Remove stale X11 locks
 rm -f /tmp/.X99-lock /tmp/.X11-unix/X99
 
