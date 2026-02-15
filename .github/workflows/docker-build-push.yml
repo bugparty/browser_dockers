@@ -100,7 +100,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=${{ steps.version.outputs.openclaw_version }},enable=${{ steps.version.outputs.openclaw_version != 'unknown' && steps.version.outputs.openclaw_version != 'none' }}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}},suffix=-
       
       - name: Extract metadata (tags, labels) - Other images
         if: matrix.dockerfile != 'Dockerfile.openclaw'
@@ -111,9 +111,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}},suffix=-
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Build and push Docker image
@@ -123,13 +121,13 @@ jobs:
           context: .
           file: ./${{ matrix.dockerfile }}
           labels: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.labels || steps.meta-other.outputs.labels }}
+          tags: ${{ matrix.dockerfile == 'Dockerfile.openclaw' && steps.meta-openclaw.outputs.tags || steps.meta-other.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: ${{ matrix.platform }}
           build-args: |
             OPENCLAW_VERSION=${{ steps.version.outputs.openclaw_version }}
-          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }},push-by-digest=true,name-canonical=true,push=true
-      
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image-name }},name-canonical=true,push=true
       - name: Export digest
         run: |
           mkdir -p /tmp/digests
@@ -200,8 +198,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=${{ steps.version.outputs.openclaw_version }},enable=${{ steps.version.outputs.openclaw_version != 'unknown' && steps.version.outputs.openclaw_version != 'none' }}
-            type=sha,prefix={{branch}}-
-      
+            type=sha,prefix={{branch}},suffix=-
       - name: Extract metadata (tags, labels) - Other images
         if: matrix.image-name != 'browserdocker-openclaw'
         id: meta-other
@@ -211,9 +208,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}},suffix=-
             type=raw,value=latest,enable={{is_default_branch}}
       
       - name: Create manifest list and push

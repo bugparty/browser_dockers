@@ -2,14 +2,6 @@ FROM ubuntu:24.04
 ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 
-# OCI Image Labels
-LABEL org.opencontainers.image.title="Brave Browser Docker"
-LABEL org.opencontainers.image.description="Brave browser in Docker with VNC support, remote debugging (CDP), and privacy-focused features. Supports both AMD64 (Chrome) and ARM64 (Chromium) architectures."
-LABEL org.opencontainers.image.vendor="browser_dockers"
-LABEL org.opencontainers.image.source="https://github.com/bugparty/browser_dockers"
-LABEL org.opencontainers.image.documentation="https://github.com/bugparty/browser_dockers/blob/main/README.md"
-LABEL org.opencontainers.image.version="1.0.0"
-LABEL maintainer="bugparty"
 RUN apt-get update && apt-get install -y --no-install-recommends \
     xvfb x11vnc fluxbox \
     libgtk-3-0 libwebkit2gtk-4.1-0 \
