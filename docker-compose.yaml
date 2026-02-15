@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   browser:
-    image: ghcr.io/bugparty/browserdocker-chrome:main
+    image: ghcr.io/bugparty/browserdocker-chrome:latest
     user: "1000:1000"
     ports:
       - "127.0.0.1:5900:5900"
