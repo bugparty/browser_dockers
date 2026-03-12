@@ -14,15 +14,17 @@ cp .env.sample .env
 # Create openclaw directories
 mkdir -p openclaw
 # Create Browser directory structure
-mkdir -p appuser
+mkdir -p appuser/.config appuser/chrome-data
 # Set ownership and permissions
 
 chown -R 1000:1000 openclaw appuser
 chmod -R 700 openclaw
+chmod -R 700 appuser
 
 echo "✓ Token generated successfully!"
 echo "✓ .env file created from .env.sample"
 echo "✓ Created ./openclaw directory"
+echo "✓ Created ./appuser directory structure"
 echo "✓ Set ownership to 1000:1000 and permissions to 700"
 echo ""
 echo "OPENCLAW_GATEWAY_TOKEN=$TOKEN"
