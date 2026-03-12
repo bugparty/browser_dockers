@@ -13,6 +13,7 @@ cp .env.sample .env
 
 # Create openclaw directories
 mkdir -p openclaw
+mkdir -p openclaw/linuxbrew openclaw/home
 # Create Browser directory structure
 mkdir -p appuser/.config appuser/chrome-data
 # Set ownership and permissions
@@ -24,6 +25,7 @@ chmod -R 700 appuser
 echo "✓ Token generated successfully!"
 echo "✓ .env file created from .env.sample"
 echo "✓ Created ./openclaw directory"
+echo "✓ Created ./openclaw/linuxbrew and ./openclaw/home"
 echo "✓ Created ./appuser directory structure"
 echo "✓ Set ownership to 1000:1000 and permissions to 700"
 echo ""

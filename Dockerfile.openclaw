@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config locales \
     libssl-dev zlib1g-dev libbz2-dev libreadline-dev libsqlite3-dev \
     libffi-dev liblzma-dev \
-    xz-utils unzip \
+    xz-utils unzip tini \
     iputils-ping nano \
     && sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen \
@@ -22,49 +22,23 @@ ARG USER=node
 ARG UID=1000
 RUN useradd -m -u ${UID} -s /bin/bash ${USER} \
  && echo "${USER} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USER} \
- && chmod 0440 /etc/sudoers.d/${USER}
+ && chmod 0440 /etc/sudoers.d/${USER} \
+ && mkdir -p /home/linuxbrew /home/${USER}/.openclaw \
+ && chown -R ${UID}:${UID} /home/linuxbrew /home/${USER}
 
 USER ${USER}
 WORKDIR /home/${USER}
 
-# Install Homebrew (Linuxbrew)
-# Note: Installation script places brew in /home/linuxbrew/.linuxbrew
-# Pin to specific commit for supply-chain security (update periodically)
-ARG HOMEBREW_INSTALL_SHA=90fa3d5881cedc0d60c4a3cc5babdb867ef42e5a
-RUN curl -fsSL "https://raw.githubusercontent.com/Homebrew/install/${HOMEBREW_INSTALL_SHA}/install.sh" -o /tmp/brew-install.sh \
- && echo "1c9db64f27d7487ecf74fe3543b96beb1f78039cc92745c3e825a9a7ccefec80  /tmp/brew-install.sh" | sha256sum -c - \
- && CI=1 NONINTERACTIVE=1 /bin/bash /tmp/brew-install.sh \
- && rm /tmp/brew-install.sh
-
-# Add brew to PATH for non-interactive shells
-ENV PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
-
-# (Optional) Disable brew analytics to reduce noise
-RUN brew analytics off
-
-# Install Node.js via brew, pin major version, and link
-RUN brew install node \
- && brew link --force --overwrite node \
- && brew cleanup -s \
- && node -v && npm -v
-
-# Install corepack and enable pnpm
-# Disable interactive prompts for Corepack downloads
+ENV HOME=/home/${USER}
+ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew
+ENV PATH=${HOMEBREW_PREFIX}/bin:${HOMEBREW_PREFIX}/sbin:$PATH
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN npm install -g corepack \
- && corepack enable
-
-# Install openclaw globally
-RUN npm install -g openclaw@latest
-
-# Remove sudo privileges (no longer needed)
-USER root
-RUN rm -f /etc/sudoers.d/${USER}
-
 ENV NODE_ENV=production
 
-# Security hardening: Run as non-root user
+COPY openclaw-entrypoint.sh /usr/local/bin/openclaw-entrypoint.sh
+USER root
+RUN chmod +x /usr/local/bin/openclaw-entrypoint.sh
 USER ${USER}
 
-# Default command to keep container running
+ENTRYPOINT ["/usr/local/bin/openclaw-entrypoint.sh"]
 CMD ["openclaw", "gateway", "--allow-unconfigured", "--bind", "lan"]

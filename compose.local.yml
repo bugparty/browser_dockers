@@ -35,14 +35,11 @@ services:
       CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY}
       CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE}
     volumes:
-      - ${OPENCLAW_CONFIG_DIR:-./openclaw/config}:/home/node/.openclaw
-      - ${OPENCLAW_WORKSPACE_DIR:-./openclaw/workspace}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_HOMEBREW_DIR:-./openclaw/linuxbrew}:/home/linuxbrew
+      - ${OPENCLAW_HOME_DIR:-./openclaw/home}:/home/node
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
-    init: true
-    stdin_open: true
-    tty: true
     restart: unless-stopped
 
     command:
@@ -51,7 +48,7 @@ services:
         "gateway",
         "--allow-unconfigured",
         "--bind",
-        "${OPENCLAW_GATEWAY_BIND:-lan}",
+        "${OPENCLAW_GATEWAY_BIND:-loopback}",
         "--port",
         "18789",
         "--token",
