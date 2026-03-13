@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    xvfb x11vnc fluxbox \
+    weston xwayland \
     libgtk-3-0 \
     libx11-6 libx11-xcb1 libxcb1 \
     libxrandr2 libxinerama1 libxcomposite1 libxcursor1 libxi6 \
@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-roboto \
     fonts-dejavu \
     fonts-liberation \
-    curl wget xauth util-linux socat nginx \
+    curl wget util-linux socat nginx openssl \
     libnotify-bin xdg-utils \
     dbus dbus-x11 at-spi2-core \
     libnss3 libgbm1 libasound2 libdrm2 \
@@ -55,16 +55,15 @@ RUN useradd -m -s /bin/bash appuser && \
     chown -R appuser:appuser /home/appuser
 WORKDIR /home/appuser
 
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy browser entrypoint script
+COPY browser-entrypoint.sh /browser-entrypoint.sh
+RUN chmod +x /browser-entrypoint.sh
 
 WORKDIR /home/appuser/
 
-ENV DISPLAY=:99
-EXPOSE 5900 9222 9223
+EXPOSE 3389 9222 9223
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/browser-entrypoint.sh"]
 USER appuser
 CMD ["chrome", \
      "--user-data-dir=/home/appuser/chrome-data", \
@@ -86,6 +85,7 @@ CMD ["chrome", \
      "--disable-web-security", \
      "--no-zygote", \
      "--single-process", \
+     "--ozone-platform-hint=auto", \
      "--use-angle=swiftshader", \
      "--use-gl=angle", \
      "--enable-webgl", \
