@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - 'Dockerfile.chrome'
-      - 'entrypoint.sh'
+      - 'browser-entrypoint.sh'
       - 'compose.local.yml'
       - '.github/workflows/browser-stability-test.yml'
   push:
@@ -13,7 +13,7 @@ on:
       - master
     paths:
       - 'Dockerfile.chrome'
-      - 'entrypoint.sh'
+      - 'browser-entrypoint.sh'
       - 'compose.local.yml'
       - '.github/workflows/browser-stability-test.yml'
   workflow_dispatch:
@@ -39,6 +39,8 @@ jobs:
       - name: Set up environment
         run: |
           ./setup_env.sh
+          sudo apt-get update
+          sudo apt-get install -y freerdp2-x11 xvfb
           # Ensure appuser directory exists and has correct permissions
           mkdir -p appuser
           sudo chown -R 1000:1000 appuser/ || true
@@ -58,11 +60,10 @@ jobs:
               image: browser-test:local
               user: "1000:1000"
               ports:
-                - "127.0.0.1:5901:5900"
+                - "127.0.0.1:3391:3389"
+                - "127.0.0.1:9223:9223"
               volumes:
                 - ./appuser:/home/appuser
-              environment:
-                - DISPLAY=:99
               healthcheck:
                 test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9223/json/version || exit 1"]
                 interval: 10s
@@ -121,14 +122,77 @@ jobs:
                 echo "❌ ERROR: Container has restarted! Initial: $INITIAL_START_COUNT, Current: $RESTART_COUNT"
                 FAILED_CHECKS=$((FAILED_CHECKS + 1))
               else
-                # Test health endpoint
-                if docker exec $(docker compose -f docker-compose.test.yml ps -q browser) curl -fsS http://127.0.0.1:9223/json/version > /dev/null 2>&1; then
-                  echo "✅ Health check PASSED - Browser is healthy"
-                  PASSED_CHECKS=$((PASSED_CHECKS + 1))
-                else
-                  echo "❌ Health check FAILED - Browser endpoint not responding"
+                # Test CDP health endpoint from the host
+                if ! curl -fsS http://127.0.0.1:9223/json/version > /dev/null 2>&1; then
+                  echo "❌ Health check FAILED - Browser CDP endpoint not responding"
                   FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                  continue
                 fi
+
+                # Test opening a stable low-friction page through CDP.
+                TARGET_JSON=$(curl -fsS -X PUT "http://127.0.0.1:9223/json/new?https://example.com/" || true)
+                TARGET_ID=$(printf '%s' "$TARGET_JSON" | jq -r '.id // empty')
+
+                if [ -z "$TARGET_ID" ]; then
+                  echo "❌ Page open FAILED - Could not create a DevTools target"
+                  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                  continue
+                fi
+
+                PAGE_OK=0
+                for _ in $(seq 1 15); do
+                  TARGET_STATE=$(curl -fsS http://127.0.0.1:9223/json/list | jq -r --arg id "$TARGET_ID" '.[] | select(.id == $id) | [.title, .url] | @tsv')
+                  TARGET_TITLE=$(printf '%s' "$TARGET_STATE" | cut -f1)
+                  TARGET_URL=$(printf '%s' "$TARGET_STATE" | cut -f2)
+                  if [ "$TARGET_TITLE" = "Example Domain" ] && [ "$TARGET_URL" = "https://example.com/" ]; then
+                    PAGE_OK=1
+                    break
+                  fi
+                  sleep 1
+                done
+                curl -fsS "http://127.0.0.1:9223/json/close/$TARGET_ID" > /dev/null 2>&1 || true
+
+                if [ "$PAGE_OK" -ne 1 ]; then
+                  echo "❌ Page open FAILED - example.com did not load as expected"
+                  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                  continue
+                fi
+
+                # Test a real RDP client connection using xfreerdp inside xvfb.
+                set +e
+                xvfb-run -a timeout 8 xfreerdp \
+                  /v:127.0.0.1:3391 \
+                  /u:test \
+                  /p:test \
+                  /cert:ignore \
+                  /sec:tls \
+                  /size:1024x768 \
+                  /log-level:INFO > /tmp/xfreerdp.log 2>&1
+                RDP_CLIENT_RC=$?
+                set -e
+
+                if [ "$RDP_CLIENT_RC" -ne 0 ] && [ "$RDP_CLIENT_RC" -ne 124 ]; then
+                  echo "❌ RDP check FAILED - xfreerdp exited unexpectedly with code $RDP_CLIENT_RC"
+                  tail -n 50 /tmp/xfreerdp.log || true
+                  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                  continue
+                fi
+
+                if grep -Eiq "failed to open display|ERRCONNECT|authentication failure|connection failure|unable to connect" /tmp/xfreerdp.log; then
+                  echo "❌ RDP check FAILED - xfreerdp reported a connection error"
+                  tail -n 50 /tmp/xfreerdp.log || true
+                  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                  continue
+                fi
+
+                if ! docker exec $(docker compose -f docker-compose.test.yml ps -q browser) sh -lc "grep -Eq 'kbd_layout:|xf_peer_activate:' /tmp/weston.log"; then
+                  echo "❌ RDP check FAILED - Weston did not record a successful RDP client activation"
+                  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+                  continue
+                fi
+
+                echo "✅ Health check PASSED - CDP, page navigation, and RDP are healthy"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
               fi
             fi
             

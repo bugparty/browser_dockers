@@ -9,9 +9,7 @@ on:
       - 'Dockerfile.barve'
       - 'Dockerfile.chrome'
       - 'Dockerfile.openclaw'
-      - 'entrypoint.sh'
-      - 'entrypoint-chrome.sh'
-      - 'entrypoint-openclaw.sh'
+      - 'browser-entrypoint.sh'
       - 'openclaw-entrypoint.sh'
       - '.github/workflows/docker-build-push.yml'
   pull_request:
