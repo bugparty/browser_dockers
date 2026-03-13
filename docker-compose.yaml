@@ -7,7 +7,7 @@ services:
     ports:
       - "127.0.0.1:3389:3389"
     volumes:
-      - ./appuser:/home/appuser
+      - browser_appuser:/home/appuser
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9223/json/version || exit 1"]
       interval: 10s
@@ -53,3 +53,6 @@ services:
         "--token",
         "${OPENCLAW_GATEWAY_TOKEN}"
       ] 
+
+volumes:
+  browser_appuser:
